@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useContext } from 'react';
 import styled from 'styled-components';
-import withDataFetching from '../withDataFetching';
+import { ListsContext } from '../Context/ListsContextProvider';
+import { ItemsContext } from '../Context/ItemsContextProvider';
 import SubHeader from '../components/Header/SubHeader';
 import ListItem from '../components/ListItem/ListItem';
 
@@ -16,28 +17,38 @@ const Alert = styled.span`
   text-align: center;
 `;
 
-const List = ({ data, loading, error, match, history }) => {
-  const items =
-    data && data.filter(item => item.listId === parseInt(match.params.id));
+const List = ({ match, history,}) => {
 
-  return !loading && !error ? (
-    <>
-      {history && (
-        <SubHeader
-          goBack={() => history.goBack()}
-          openForm={() => history.push(`${match.url}/new`)}
-        />
-      )}
-      <ListItemWrapper>
-        {items && items.map(item => <ListItem key={item.id} data={item} />)}
-      </ListItemWrapper>
-    </>
-  ) : (
-    <Alert>{loading ? 'Loading...' : error}</Alert>
-  );
+    const { list, getListRequest } = useContext(ListsContext);
+    const { items, loading, error, getItemsRequest } = useContext(ItemsContext);
+
+    useEffect(() => {
+
+        if (!list.id) {
+            getListRequest(match.params.id);
+        }
+
+        if (!items.length > 0) {
+            getItemsRequest(match.params.id);
+        }
+    }, [items, list, match.params.id, getItemsRequest, getListRequest])
+
+    return !loading && !error ? (
+        <>
+            {history && list && (
+                <SubHeader
+                    goBack={() => history.goBack()}
+                    title={list.title}
+                    openForm={() => history.push(`${match.url}/new`)}
+                />
+            )}
+            <ListItemWrapper>
+                {items && items.map(item => <ListItem key={item.id} data={item}/>)}
+            </ListItemWrapper>
+        </>
+    ) : (
+        <Alert>{loading ? 'Loading...' : error}</Alert>
+    );
 };
 
-export default withDataFetching({
-  dataSource:
-    'https://my-json-server.typicode.com/pranayfpackt/-React-Projects/items',
-})(List);
+export default List;
